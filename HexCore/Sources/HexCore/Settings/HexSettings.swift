@@ -6,6 +6,15 @@ public enum RecordingAudioBehavior: String, Codable, CaseIterable, Equatable, Se
 	case doNothing
 }
 
+/// Recording mode for hotkey activation.
+///
+/// - `holdToRecord`: Press and hold the hotkey to record; release to stop.
+/// - `tapToToggle`: Tap once to start recording; tap again to stop.
+public enum RecordingMode: String, Codable, CaseIterable, Equatable, Sendable {
+	case holdToRecord
+	case tapToToggle
+}
+
 /// User-configurable settings saved to disk.
 public struct HexSettings: Codable, Equatable, Sendable {
 	public static let defaultPasteLastTranscriptHotkey = HotKey(key: .v, modifiers: [.option, .shift])
@@ -28,7 +37,7 @@ public struct HexSettings: Codable, Equatable, Sendable {
 	public var recordingAudioBehavior: RecordingAudioBehavior
 	public var minimumKeyTime: Double
 	public var copyToClipboard: Bool
-	public var useDoubleTapOnly: Bool
+	public var recordingMode: RecordingMode
 	public var outputLanguage: String?
 	public var selectedMicrophoneID: String?
 	public var saveTranscriptionHistory: Bool
@@ -51,7 +60,7 @@ public struct HexSettings: Codable, Equatable, Sendable {
 		recordingAudioBehavior: RecordingAudioBehavior = .doNothing,
 		minimumKeyTime: Double = HexCoreConstants.defaultMinimumKeyTime,
 		copyToClipboard: Bool = false,
-		useDoubleTapOnly: Bool = false,
+		recordingMode: RecordingMode = .holdToRecord,
 		outputLanguage: String? = nil,
 		selectedMicrophoneID: String? = nil,
 		saveTranscriptionHistory: Bool = true,
@@ -73,7 +82,7 @@ public struct HexSettings: Codable, Equatable, Sendable {
 		self.recordingAudioBehavior = recordingAudioBehavior
 		self.minimumKeyTime = minimumKeyTime
 		self.copyToClipboard = copyToClipboard
-		self.useDoubleTapOnly = useDoubleTapOnly
+		self.recordingMode = recordingMode
 		self.outputLanguage = outputLanguage
 		self.selectedMicrophoneID = selectedMicrophoneID
 		self.saveTranscriptionHistory = saveTranscriptionHistory
@@ -116,7 +125,8 @@ private enum HexSettingKey: String, CodingKey, CaseIterable {
 	case pauseMediaOnRecord // Legacy
 	case minimumKeyTime
 	case copyToClipboard
-	case useDoubleTapOnly
+	case recordingMode
+	case useDoubleTapOnly // Legacy - migrates to recordingMode
 	case outputLanguage
 	case selectedMicrophoneID
 	case saveTranscriptionHistory
@@ -210,7 +220,22 @@ private enum HexSettingsSchema {
 		).eraseToAny(),
 		SettingsField(.minimumKeyTime, keyPath: \.minimumKeyTime, default: defaults.minimumKeyTime).eraseToAny(),
 		SettingsField(.copyToClipboard, keyPath: \.copyToClipboard, default: defaults.copyToClipboard).eraseToAny(),
-		SettingsField(.useDoubleTapOnly, keyPath: \.useDoubleTapOnly, default: defaults.useDoubleTapOnly).eraseToAny(),
+		SettingsField(
+			.recordingMode,
+			keyPath: \.recordingMode,
+			default: defaults.recordingMode,
+			decode: { container, key, defaultValue in
+				// First try to decode new recordingMode
+				if let value = try container.decodeIfPresent(RecordingMode.self, forKey: key) {
+					return value
+				}
+				// Fall back to legacy useDoubleTapOnly migration
+				if let legacyDoubleTap = try container.decodeIfPresent(Bool.self, forKey: .useDoubleTapOnly) {
+					return legacyDoubleTap ? .tapToToggle : .holdToRecord
+				}
+				return defaultValue
+			}
+		).eraseToAny(),
 		SettingsField(
 			.outputLanguage,
 			keyPath: \.outputLanguage,

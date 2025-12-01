@@ -67,6 +67,17 @@ public enum HexCoreConstants {
     /// - `HexSettings`: Default value for user preference
     /// - `HotKeyProcessor`: Validation for printable-key hotkeys
     public static let defaultMinimumKeyTime: TimeInterval = 0.2
+
+    /// Maximum minimum key time setting for accessibility.
+    ///
+    /// **Value:** 5.0 seconds
+    ///
+    /// **Rationale:** Extended from 2.0 to 5.0 seconds to accommodate users with
+    /// motor control considerations who may need longer to stabilize their key press.
+    ///
+    /// **Used in:**
+    /// - `HotKeySectionView`: Slider maximum value
+    public static let maximumMinimumKeyTime: TimeInterval = 5.0
     
     /// Base volume for sound effects (before user multiplier applied).
     ///
