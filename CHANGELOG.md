@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.6.5
+
+### Patch Changes
+
+- 140c205: Fix Sparkle auto-update for sandboxed app by adding required XPC entitlements and SUEnableInstallerLauncherService. Users on 0.6.3 will need to manually download this update.
+
+## 0.6.4
+
+### Patch Changes
+
+- c00f79e: Reduce code duplication: add ModelPatternMatcher, FileManager helpers, settingsCaption style, notification constants, and Core Audio helper
+- 658a755: Fix silent recordings caused by device-level microphone mute - automatically detects and fixes muted input devices before recording
+
 ## 0.6.3
 
 ### Patch Changes
