@@ -19,6 +19,12 @@ public enum RecordingMode: String, Codable, CaseIterable, Equatable, Sendable {
 public struct HexSettings: Codable, Equatable, Sendable {
 	public static let defaultPasteLastTranscriptHotkey = HotKey(key: .v, modifiers: [.option, .shift])
 	public static let baseSoundEffectsVolume: Double = HexCoreConstants.baseSoundEffectsVolume
+	public static let defaultWordRemovals: [WordRemoval] = [
+		.init(pattern: "uh+"),
+		.init(pattern: "um+"),
+		.init(pattern: "er+"),
+		.init(pattern: "hm+")
+	]
 
 	public static var defaultPasteLastTranscriptHotkeyDescription: String {
 		let modifiers = defaultPasteLastTranscriptHotkey.modifiers.sorted.map { $0.stringValue }.joined()
@@ -45,6 +51,8 @@ public struct HexSettings: Codable, Equatable, Sendable {
 	public var pasteLastTranscriptHotkey: HotKey?
 	public var hasCompletedModelBootstrap: Bool
 	public var hasCompletedStorageMigration: Bool
+	public var wordRemovalsEnabled: Bool
+	public var wordRemovals: [WordRemoval]
 	public var wordRemappings: [WordRemapping]
 
 	public init(
@@ -67,6 +75,8 @@ public struct HexSettings: Codable, Equatable, Sendable {
 		pasteLastTranscriptHotkey: HotKey? = HexSettings.defaultPasteLastTranscriptHotkey,
 		hasCompletedModelBootstrap: Bool = false,
 		hasCompletedStorageMigration: Bool = false,
+		wordRemovalsEnabled: Bool = false,
+		wordRemovals: [WordRemoval] = HexSettings.defaultWordRemovals,
 		wordRemappings: [WordRemapping] = []
 	) {
 		self.soundEffectsEnabled = soundEffectsEnabled
@@ -88,6 +98,8 @@ public struct HexSettings: Codable, Equatable, Sendable {
 		self.pasteLastTranscriptHotkey = pasteLastTranscriptHotkey
 		self.hasCompletedModelBootstrap = hasCompletedModelBootstrap
 		self.hasCompletedStorageMigration = hasCompletedStorageMigration
+		self.wordRemovalsEnabled = wordRemovalsEnabled
+		self.wordRemovals = wordRemovals
 		self.wordRemappings = wordRemappings
 	}
 
@@ -131,6 +143,8 @@ private enum HexSettingKey: String, CodingKey, CaseIterable {
 	case pasteLastTranscriptHotkey
 	case hasCompletedModelBootstrap
 	case hasCompletedStorageMigration
+	case wordRemovalsEnabled
+	case wordRemovals
 	case wordRemappings
 }
 
@@ -267,6 +281,12 @@ private enum HexSettingsSchema {
 		).eraseToAny(),
 		SettingsField(.hasCompletedModelBootstrap, keyPath: \.hasCompletedModelBootstrap, default: defaults.hasCompletedModelBootstrap).eraseToAny(),
 		SettingsField(.hasCompletedStorageMigration, keyPath: \.hasCompletedStorageMigration, default: defaults.hasCompletedStorageMigration).eraseToAny(),
+		SettingsField(.wordRemovalsEnabled, keyPath: \.wordRemovalsEnabled, default: defaults.wordRemovalsEnabled).eraseToAny(),
+		SettingsField(
+			.wordRemovals,
+			keyPath: \.wordRemovals,
+			default: defaults.wordRemovals
+		).eraseToAny(),
 		SettingsField(
 			.wordRemappings,
 			keyPath: \.wordRemappings,
