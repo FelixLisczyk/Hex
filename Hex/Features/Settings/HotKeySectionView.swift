@@ -40,24 +40,35 @@ struct HotKeySectionView: View {
                 }
             }
 
-            // Double-tap toggle (for key+modifier combinations)
-            if hotKey.key != nil {
-                Label {
-                    Toggle("Use double-tap only", isOn: $store.hexSettings.useDoubleTapOnly)
-                } icon: {
-                    Image(systemName: "hand.tap")
+            // Recording Mode picker
+            Label {
+                Picker("Recording Mode", selection: $store.hexSettings.recordingMode) {
+                    Text("Hold to Record").tag(RecordingMode.holdToRecord)
+                    Text("Tap to Toggle").tag(RecordingMode.tapToToggle)
                 }
+                .pickerStyle(.segmented)
+            } icon: {
+                Image(systemName: "hand.tap")
             }
 
-            // Minimum key time (for modifier-only shortcuts)
-            if store.hexSettings.hotkey.key == nil {
-                Label {
-                    Slider(value: $store.hexSettings.minimumKeyTime, in: 0.0 ... 2.0, step: 0.1) {
-                        Text("Ignore below \(store.hexSettings.minimumKeyTime, specifier: "%.1f")s")
-                    }
-                } icon: {
-                    Image(systemName: "clock")
+            // Minimum key time slider (available for all hotkey types in both modes)
+            Label {
+                Slider(
+                    value: $store.hexSettings.minimumKeyTime,
+                    in: 0.0 ... HexCoreConstants.maximumMinimumKeyTime,
+                    step: 0.1
+                ) {
+                    Text("Minimum hold time: \(store.hexSettings.minimumKeyTime, specifier: "%.1f")s")
                 }
+            } icon: {
+                Image(systemName: "clock")
+            }
+
+            // Accessibility note for modifier-only hotkeys
+            if store.hexSettings.hotkey.key == nil {
+                Text("Modifier-only hotkeys enforce a 0.3s minimum to avoid conflicts with system shortcuts.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .enableInjection()

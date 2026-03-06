@@ -71,11 +71,11 @@ The key insight: **Modifier-only hotkeys need protection from accidental trigger
 modifierOnlyMinimumDuration = 0.3s
 
 // For all hotkeys (user-configurable)
-minimumKeyTime = 0.2s (default)
+minimumKeyTime = 0.2s (default, range 0-5s)
+maximumMinimumKeyTime = 5.0s        // For accessibility
 
-// Other thresholds
-doubleTapThreshold = 0.3s           // Max time between taps
-pressAndHoldCancelThreshold = 1.0s  // For regular hotkeys only
+// For regular hotkeys only
+pressAndHoldCancelThreshold = 1.0s
 ```
 
 ### Effective Thresholds
@@ -254,42 +254,49 @@ Why: Releasing any part of the hotkey = release
 
 ---
 
-## Double-Tap Lock
+## Recording Modes
 
-**Quick double-tap locks recording on** (hands-free mode)
+Hex supports two user-selectable recording modes:
 
-### Timeline
+### Hold-to-Record (Default)
+
+**Press and hold the hotkey to record; release to stop.**
 
 ```
-0.0s: Tap hotkey ──────────→ START
-0.1s: Release ─────────────→ STOP
-0.2s: Tap again ───────────→ START
-0.3s: Release ─────────────→ LOCK! (Δt = 0.2s < 0.3s)
+0.0s: Press hotkey ────────→ START recording
+...   (keep holding, talking)
+2.0s: Release hotkey ──────→ STOP, transcribe
 
-Now recording is locked on:
-- Release doesn't stop it
-- Tap hotkey again to stop
-- ESC also stops
-
-5.0s: Tap hotkey ──────────→ STOP
+Result: Audio transcribed and pasted
 ```
 
-### Sequence
+This is the default behavior described throughout this document.
 
-1. **Tap 1** (t=0.0s) → START recording
-2. **Release** (t=0.1s) → STOP (normal behavior)
-3. **Tap 2** (t=0.2s, within 0.3s window) → START recording again
-4. **Release** (t=0.3s, Δt=0.2s < 0.3s) → **LOCK!** (hands-free mode)
-5. Recording continues until:
-   - Tap hotkey again → STOP
-   - Press ESC → STOP
+### Tap-to-Toggle Mode
 
-### Rules
+**Single tap to start recording; tap again to stop.** (hands-free mode)
 
-1. **Timing window**: 2nd tap must be within **0.3s** of 1st release
-2. **Lock engages**: On **2nd release**, not 2nd press
-3. **Exit lock**: Tap hotkey again OR press ESC
-4. **Too slow**: If 2nd tap > 0.3s after 1st release, treated as new recording
+```
+0.0s: Tap hotkey ──────────→ START recording
+0.1s: Release ─────────────→ (ignored, keeps recording)
+...   (hands-free, keep talking)
+5.0s: Tap hotkey again ────→ STOP, transcribe
+```
+
+### Sequence (Tap-to-Toggle)
+
+1. **Tap** (t=0.0s) → START recording
+2. **Release** (t=0.1s) → (ignored, recording continues)
+3. Keep talking, hands-free...
+4. **Tap again** (t=5.0s) → STOP, transcribe
+5. Alternatively: Press **ESC** → CANCEL
+
+### Rules (Tap-to-Toggle)
+
+1. **Start**: Single press starts recording immediately
+2. **Release ignored**: Lifting the hotkey doesn't stop recording
+3. **Stop**: Press hotkey again OR press ESC
+4. **Modifier-only safety**: 0.3s minimum still applies for accidental trigger prevention
 
 ---
 
@@ -414,22 +421,23 @@ User: Hold Option (0.1s) → Add Shift → Release Shift → Press Option again
 **States:**
 
 - **IDLE**
-  - Transition: chord matches hotkey → PRESS & HOLD
+  - Transition: chord matches hotkey → RECORDING
 
-- **PRESS & HOLD** (recording)
-  - On release (normal):
-    - Check elapsed time
-    - If < 0.3s (modifier-only) or < minimumKeyTime (regular) → DISCARD
-    - If ≥ threshold → Check last tap timing
-      - If Δt < 0.3s → LOCK
-      - Otherwise → STOP → IDLE
-  - On other input:
-    - Check elapsed time
-    - If < 0.3s → DISCARD → IDLE
-    - If ≥ 0.3s → (ignore, keep recording)
-
-- **LOCK** (hands-free recording)
-  - Transition: Tap hotkey again OR press ESC → STOP → IDLE
+- **RECORDING** (recording active)
+  - **Hold-to-Record mode:**
+    - On release:
+      - Check elapsed time
+      - If < 0.3s (modifier-only) or < minimumKeyTime (regular) → DISCARD → IDLE
+      - If ≥ threshold → STOP → IDLE
+    - On other input:
+      - Check elapsed time
+      - If < threshold → DISCARD → IDLE
+      - If ≥ threshold → (ignore, keep recording)
+    - On ESC → CANCEL → IDLE
+  - **Tap-to-Toggle mode:**
+    - On release → (ignore, keep recording)
+    - On hotkey press → STOP → IDLE
+    - On ESC → CANCEL → IDLE
 
 ---
 
@@ -572,6 +580,12 @@ Result: Recording cancelled ✅
 
 ---
 
-**Document Version:** 2.0  
-**Last Updated:** 2025-11-14  
-**Total Tests:** 46 passing ✅
+**Document Version:** 3.0
+**Last Updated:** 2025-12-01
+**Total Tests:** 47 passing ✅
+
+### Changes in v3.0
+- Replaced double-tap lock with tap-to-toggle recording mode
+- Simplified state machine from 3 states to 2 states (idle, recording)
+- Added RecordingMode enum (holdToRecord, tapToToggle)
+- Extended minimum key time range from 0-2s to 0-5s for accessibility

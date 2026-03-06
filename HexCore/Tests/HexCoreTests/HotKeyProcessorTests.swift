@@ -161,129 +161,129 @@ struct HotKeyProcessorTests {
         )
     }
 
-    // Tests double-tap to lock recording
+    // MARK: - Tap-to-Toggle Mode Tests
+
+    // Tests tap-to-toggle starts recording on press
     @Test
-    func doubleTapLock_startsRecordingOnDoubleTap_standard() throws {
+    func tapToToggle_startsRecordingOnPress_standard() throws {
         runScenario(
             hotkey: HotKey(key: .a, modifiers: [.command]),
+            recordingMode: .tapToToggle,
             steps: [
-                // First tap
+                // Press hotkey - starts recording
                 ScenarioStep(time: 0.0, key: .a, modifiers: [.command], expectedOutput: .startRecording, expectedIsMatched: true),
-                // First release
-                ScenarioStep(time: 0.1, key: nil, modifiers: [.command], expectedOutput: .stopRecording, expectedIsMatched: false),
-                // Release all modifiers
-                ScenarioStep(time: 0.1, key: nil, modifiers: [], expectedOutput: nil, expectedIsMatched: false),
-                // Press modifier again
-                ScenarioStep(time: 0.15, key: nil, modifiers: [.command], expectedOutput: nil, expectedIsMatched: false),
-                // Second tap within threshold
-                ScenarioStep(time: 0.2, key: .a, modifiers: [.command], expectedOutput: .startRecording, expectedIsMatched: true),
-                // Second release (should stay recording)
-                ScenarioStep(time: 0.3, key: nil, modifiers: [.command], expectedOutput: nil, expectedIsMatched: true, expectedState: .doubleTapLock),
             ]
         )
     }
 
     @Test
-    func doubleTapLock_startsRecordingOnDoubleTap_modifierOnly() throws {
+    func tapToToggle_startsRecordingOnPress_modifierOnly() throws {
         runScenario(
             hotkey: HotKey(key: nil, modifiers: [.option]),
+            recordingMode: .tapToToggle,
             steps: [
-                // First tap
+                // Press hotkey - starts recording
                 ScenarioStep(time: 0.0, key: nil, modifiers: [.option], expectedOutput: .startRecording, expectedIsMatched: true),
-                // First release
-                ScenarioStep(time: 0.1, key: nil, modifiers: [], expectedOutput: .stopRecording, expectedIsMatched: false),
-                // Second tap within threshold
-                ScenarioStep(time: 0.2, key: nil, modifiers: [.option], expectedOutput: .startRecording, expectedIsMatched: true),
-                // Second release (should stay recording)
-                ScenarioStep(time: 0.3, key: nil, modifiers: [], expectedOutput: nil, expectedIsMatched: true, expectedState: .doubleTapLock),
+            ]
+        )
+    }
+
+    // Tests tap-to-toggle ignores release (recording continues)
+    @Test
+    func tapToToggle_ignoresRelease_standard() throws {
+        runScenario(
+            hotkey: HotKey(key: .a, modifiers: [.command]),
+            recordingMode: .tapToToggle,
+            steps: [
+                // Press hotkey - starts recording
+                ScenarioStep(time: 0.0, key: .a, modifiers: [.command], expectedOutput: .startRecording, expectedIsMatched: true),
+                // Release hotkey - should be ignored, recording continues
+                ScenarioStep(time: 0.1, key: nil, modifiers: [.command], expectedOutput: nil, expectedIsMatched: true),
+                // Release all modifiers - still ignored
+                ScenarioStep(time: 0.2, key: nil, modifiers: [], expectedOutput: nil, expectedIsMatched: true),
             ]
         )
     }
 
     @Test
-    func doubleTapLock_startsRecordingOnDoubleTap_multipleModifiers() throws {
+    func tapToToggle_ignoresRelease_modifierOnly() throws {
+        runScenario(
+            hotkey: HotKey(key: nil, modifiers: [.option]),
+            recordingMode: .tapToToggle,
+            steps: [
+                // Press hotkey - starts recording
+                ScenarioStep(time: 0.0, key: nil, modifiers: [.option], expectedOutput: .startRecording, expectedIsMatched: true),
+                // Release hotkey - should be ignored, recording continues
+                ScenarioStep(time: 0.1, key: nil, modifiers: [], expectedOutput: nil, expectedIsMatched: true),
+            ]
+        )
+    }
+
+    // Tests tap-to-toggle stops recording on second press
+    @Test
+    func tapToToggle_stopsOnSecondPress_standard() throws {
+        runScenario(
+            hotkey: HotKey(key: .a, modifiers: [.command]),
+            recordingMode: .tapToToggle,
+            steps: [
+                // First press - starts recording
+                ScenarioStep(time: 0.0, key: .a, modifiers: [.command], expectedOutput: .startRecording, expectedIsMatched: true),
+                // Release - ignored
+                ScenarioStep(time: 0.1, key: nil, modifiers: [.command], expectedOutput: nil, expectedIsMatched: true),
+                ScenarioStep(time: 0.2, key: nil, modifiers: [], expectedOutput: nil, expectedIsMatched: true),
+                // Second press - stops recording
+                ScenarioStep(time: 0.5, key: .a, modifiers: [.command], expectedOutput: .stopRecording, expectedIsMatched: false),
+            ]
+        )
+    }
+
+    @Test
+    func tapToToggle_stopsOnSecondPress_modifierOnly() throws {
+        runScenario(
+            hotkey: HotKey(key: nil, modifiers: [.option]),
+            recordingMode: .tapToToggle,
+            steps: [
+                // First press - starts recording
+                ScenarioStep(time: 0.0, key: nil, modifiers: [.option], expectedOutput: .startRecording, expectedIsMatched: true),
+                // Release - ignored
+                ScenarioStep(time: 0.1, key: nil, modifiers: [], expectedOutput: nil, expectedIsMatched: true),
+                // Second press - stops recording
+                ScenarioStep(time: 0.5, key: nil, modifiers: [.option], expectedOutput: .stopRecording, expectedIsMatched: false),
+            ]
+        )
+    }
+
+    // Tests tap-to-toggle ESC cancels recording
+    @Test
+    func tapToToggle_escCancels() throws {
+        runScenario(
+            hotkey: HotKey(key: nil, modifiers: [.option]),
+            recordingMode: .tapToToggle,
+            steps: [
+                // Press hotkey - starts recording
+                ScenarioStep(time: 0.0, key: nil, modifiers: [.option], expectedOutput: .startRecording, expectedIsMatched: true),
+                // Release - ignored
+                ScenarioStep(time: 0.1, key: nil, modifiers: [], expectedOutput: nil, expectedIsMatched: true),
+                // ESC cancels recording
+                ScenarioStep(time: 0.5, key: .escape, modifiers: [], expectedOutput: .cancel, expectedIsMatched: false),
+            ]
+        )
+    }
+
+    // Tests tap-to-toggle with multiple modifiers
+    @Test
+    func tapToToggle_multipleModifiers() throws {
         runScenario(
             hotkey: HotKey(key: nil, modifiers: [.option, .command]),
+            recordingMode: .tapToToggle,
             steps: [
-                // First tap
+                // Build up modifiers
                 ScenarioStep(time: 0.0, key: nil, modifiers: [.option], expectedOutput: nil, expectedIsMatched: false),
                 ScenarioStep(time: 0.05, key: nil, modifiers: [.option, .command], expectedOutput: .startRecording, expectedIsMatched: true),
-                // First release
-                ScenarioStep(time: 0.1, key: nil, modifiers: [.option], expectedOutput: .stopRecording, expectedIsMatched: false),
-                // Second tap within threshold
-                ScenarioStep(time: 0.2, key: nil, modifiers: [.option, .command], expectedOutput: .startRecording, expectedIsMatched: true),
-                // Second release (should stay recording)
-                ScenarioStep(time: 0.3, key: nil, modifiers: [.option], expectedOutput: nil, expectedIsMatched: true, expectedState: .doubleTapLock),
-            ]
-        )
-    }
-
-    // Tests that a slow double tap doesn't lock recording
-    @Test
-    func doubleTapLock_ignoresSlowDoubleTap_standard() throws {
-        runScenario(
-            hotkey: HotKey(key: .a, modifiers: [.command]),
-            steps: [
-                // First tap
-                ScenarioStep(time: 0.0, key: .a, modifiers: [.command], expectedOutput: .startRecording, expectedIsMatched: true),
-                // First release
-                ScenarioStep(time: 0.1, key: nil, modifiers: [.command], expectedOutput: .stopRecording, expectedIsMatched: false),
-                // Second tap after threshold
-                ScenarioStep(time: 0.4, key: .a, modifiers: [.command], expectedOutput: .startRecording, expectedIsMatched: true),
-            ]
-        )
-    }
-
-    @Test
-    func doubleTapLock_ignoresSlowDoubleTap_modifierOnly() throws {
-        runScenario(
-            hotkey: HotKey(key: nil, modifiers: [.option]),
-            steps: [
-                // First tap
-                ScenarioStep(time: 0.0, key: nil, modifiers: [.option], expectedOutput: .startRecording, expectedIsMatched: true),
-                // First release
-                ScenarioStep(time: 0.1, key: nil, modifiers: [], expectedOutput: .stopRecording, expectedIsMatched: false),
-                // Second tap after threshold
-                ScenarioStep(time: 0.4, key: nil, modifiers: [.option], expectedOutput: .startRecording, expectedIsMatched: true),
-            ]
-        )
-    }
-
-    // Tests that tapping again after double-tap lock stops recording
-    @Test
-    func doubleTapLock_stopsRecordingOnNextTap_standard() throws {
-        runScenario(
-            hotkey: HotKey(key: .a, modifiers: [.command]),
-            steps: [
-                // First tap
-                ScenarioStep(time: 0.0, key: .a, modifiers: [.command], expectedOutput: .startRecording, expectedIsMatched: true),
-                // First release
-                ScenarioStep(time: 0.1, key: nil, modifiers: [.command], expectedOutput: .stopRecording, expectedIsMatched: false),
-                // Second tap within threshold
-                ScenarioStep(time: 0.2, key: .a, modifiers: [.command], expectedOutput: .startRecording, expectedIsMatched: true),
-                // Second release (should stay recording)
-                ScenarioStep(time: 0.3, key: nil, modifiers: [.command], expectedOutput: nil, expectedIsMatched: true, expectedState: .doubleTapLock),
-                // Third tap to stop recording
-                ScenarioStep(time: 1.0, key: .a, modifiers: [.command], expectedOutput: .stopRecording, expectedIsMatched: false),
-            ]
-        )
-    }
-
-    @Test
-    func doubleTapLock_stopsRecordingOnNextTap_modifierOnly() throws {
-        runScenario(
-            hotkey: HotKey(key: nil, modifiers: [.option]),
-            steps: [
-                // First tap
-                ScenarioStep(time: 0.0, key: nil, modifiers: [.option], expectedOutput: .startRecording, expectedIsMatched: true),
-                // First release
-                ScenarioStep(time: 0.1, key: nil, modifiers: [], expectedOutput: .stopRecording, expectedIsMatched: false),
-                // Second tap within threshold
-                ScenarioStep(time: 0.2, key: nil, modifiers: [.option], expectedOutput: .startRecording, expectedIsMatched: true),
-                // Second release (should stay recording)
-                ScenarioStep(time: 0.3, key: nil, modifiers: [], expectedOutput: nil, expectedIsMatched: true, expectedState: .doubleTapLock),
-                // Third tap to stop recording
-                ScenarioStep(time: 1.0, key: nil, modifiers: [.option], expectedOutput: .stopRecording, expectedIsMatched: false),
+                // Partial release - still recording (tap-to-toggle mode)
+                ScenarioStep(time: 0.1, key: nil, modifiers: [.option], expectedOutput: nil, expectedIsMatched: true),
+                // Second press - stops recording
+                ScenarioStep(time: 0.2, key: nil, modifiers: [.option, .command], expectedOutput: .stopRecording, expectedIsMatched: false),
             ]
         )
     }
@@ -367,40 +367,34 @@ struct HotKeyProcessorTests {
         )
     }
 
-    // Tests that double-tap lock only engages after the second release, not the second press
+    // Tests that holdToRecord mode correctly processes state
     @Test
-    func doubleTap_onlyLocksAfterSecondRelease() throws {
+    func holdToRecord_stateTransitions() throws {
         runScenario(
             hotkey: HotKey(key: nil, modifiers: [.option]),
+            recordingMode: .holdToRecord,
             steps: [
-                // First tap
-                ScenarioStep(time: 0.0, key: nil, modifiers: [.option], expectedOutput: .startRecording, expectedIsMatched: true),
-                // First release
-                ScenarioStep(time: 0.1, key: nil, modifiers: [], expectedOutput: .stopRecording, expectedIsMatched: false),
-                // Second tap within threshold - should start a new recording but not lock yet
-                ScenarioStep(time: 0.2, key: nil, modifiers: [.option], expectedOutput: .startRecording, expectedIsMatched: true, expectedState: .pressAndHold(startTime: Date(timeIntervalSince1970: 0.2))),
-                // Second release - NOW it should lock
-                ScenarioStep(time: 0.3, key: nil, modifiers: [], expectedOutput: nil, expectedIsMatched: true, expectedState: .doubleTapLock),
+                // Press - starts recording
+                ScenarioStep(time: 0.0, key: nil, modifiers: [.option], expectedOutput: .startRecording, expectedIsMatched: true, expectedState: .recording(startTime: Date(timeIntervalSince1970: 0.0))),
+                // Release - stops recording
+                ScenarioStep(time: 0.3, key: nil, modifiers: [], expectedOutput: .stopRecording, expectedIsMatched: false, expectedState: .idle),
             ]
         )
     }
 
-    // Tests that if second tap is held too long, it's treated as a new press-and-hold instead of double-tap
+    // Tests that tapToToggle mode correctly processes state
     @Test
-    func doubleTap_secondTapHeldTooLongBecomesHold() throws {
+    func tapToToggle_stateTransitions() throws {
         runScenario(
             hotkey: HotKey(key: nil, modifiers: [.option]),
+            recordingMode: .tapToToggle,
             steps: [
-                // First tap
-                ScenarioStep(time: 0.0, key: nil, modifiers: [.option], expectedOutput: .startRecording, expectedIsMatched: true),
-                // First release
-                ScenarioStep(time: 0.1, key: nil, modifiers: [], expectedOutput: .stopRecording, expectedIsMatched: false),
-                // Second press within threshold
-                ScenarioStep(time: 0.2, key: nil, modifiers: [.option], expectedOutput: .startRecording, expectedIsMatched: true),
-                // Hold for 2 seconds (should stay in press-and-hold mode)
-                ScenarioStep(time: 2.2, key: nil, modifiers: [.option], expectedOutput: nil, expectedIsMatched: true),
-                // Release - should stop recording since it was a hold
-                ScenarioStep(time: 2.3, key: nil, modifiers: [], expectedOutput: .stopRecording, expectedIsMatched: false),
+                // Press - starts recording
+                ScenarioStep(time: 0.0, key: nil, modifiers: [.option], expectedOutput: .startRecording, expectedIsMatched: true, expectedState: .recording(startTime: Date(timeIntervalSince1970: 0.0))),
+                // Release - ignored (still recording)
+                ScenarioStep(time: 0.3, key: nil, modifiers: [], expectedOutput: nil, expectedIsMatched: true, expectedState: .recording(startTime: Date(timeIntervalSince1970: 0.0))),
+                // Second press - stops recording
+                ScenarioStep(time: 0.5, key: nil, modifiers: [.option], expectedOutput: .stopRecording, expectedIsMatched: false, expectedState: .idle),
             ]
         )
     }
@@ -421,20 +415,18 @@ struct HotKeyProcessorTests {
         )
     }
     
-    // Tests ESC cancellation from lock state
+    // Tests ESC cancellation from tap-to-toggle state
     @Test
-    func escape_cancelsFromLock() throws {
+    func escape_cancelsFromTapToToggle() throws {
         runScenario(
             hotkey: HotKey(key: nil, modifiers: [.option]),
+            recordingMode: .tapToToggle,
             steps: [
-                // First tap
+                // Start recording
                 ScenarioStep(time: 0.0, key: nil, modifiers: [.option], expectedOutput: .startRecording, expectedIsMatched: true),
-                // First release
-                ScenarioStep(time: 0.1, key: nil, modifiers: [], expectedOutput: .stopRecording, expectedIsMatched: false),
-                // Second tap (locks)
-                ScenarioStep(time: 0.2, key: nil, modifiers: [.option], expectedOutput: .startRecording, expectedIsMatched: true),
+                // Release (ignored in tap-to-toggle mode)
                 ScenarioStep(time: 0.3, key: nil, modifiers: [], expectedOutput: nil, expectedIsMatched: true),
-                // Now locked - press ESC
+                // Press ESC to cancel
                 ScenarioStep(time: 1.0, key: .escape, modifiers: [], expectedOutput: .cancel, expectedIsMatched: false),
             ]
         )
@@ -603,6 +595,7 @@ struct ScenarioStep {
 
 func runScenario(
     hotkey: HotKey,
+    recordingMode: RecordingMode = .holdToRecord,
     steps: [ScenarioStep]
 ) {
     // Sort steps by time, just in case they're not in ascending order
@@ -615,7 +608,7 @@ func runScenario(
     var processor = withDependencies {
         $0.date.now = Date(timeIntervalSince1970: currentTime)
     } operation: {
-        HotKeyProcessor(hotkey: hotkey)
+        HotKeyProcessor(hotkey: hotkey, recordingMode: recordingMode)
     }
 
     // We'll step through each event
@@ -798,41 +791,31 @@ struct MouseClickTests {
     }
     
     @Test
-    func mouseClick_ignoredInDoubleTapLock() throws {
+    func mouseClick_ignoredInTapToToggleMode() throws {
         var processor = withDependencies {
             $0.date.now = Date(timeIntervalSince1970: 0)
         } operation: {
-            HotKeyProcessor(hotkey: HotKey(key: nil, modifiers: [.option]), minimumKeyTime: 0.15)
+            HotKeyProcessor(hotkey: HotKey(key: nil, modifiers: [.option]), recordingMode: .tapToToggle, minimumKeyTime: 0.15)
         }
-        
-        // First tap
+
+        // Start recording
         _ = withDependencies {
             $0.date.now = Date(timeIntervalSince1970: 0)
         } operation: {
             processor.process(keyEvent: KeyEvent(key: nil, modifiers: [.option]))
         }
-        _ = withDependencies {
-            $0.date.now = Date(timeIntervalSince1970: 0.2)
-        } operation: {
-            processor.process(keyEvent: KeyEvent(key: nil, modifiers: []))
-        }
-        
-        // Second tap within threshold - should lock
-        _ = withDependencies {
-            $0.date.now = Date(timeIntervalSince1970: 0.4)
-        } operation: {
-            processor.process(keyEvent: KeyEvent(key: nil, modifiers: [.option]))
-        }
+
+        // Release (ignored in tap-to-toggle mode)
         _ = withDependencies {
             $0.date.now = Date(timeIntervalSince1970: 0.5)
         } operation: {
             processor.process(keyEvent: KeyEvent(key: nil, modifiers: []))
         }
-        
-        // Should be in double-tap lock now
-        #expect(processor.state == .doubleTapLock)
-        
-        // Mouse click should be ignored - only ESC cancels locked recordings
+
+        // Should still be recording
+        #expect(processor.isMatched == true)
+
+        // Mouse click after threshold should be ignored in tap-to-toggle mode
         let clickOutput = withDependencies {
             $0.date.now = Date(timeIntervalSince1970: 0.6)
         } operation: {
