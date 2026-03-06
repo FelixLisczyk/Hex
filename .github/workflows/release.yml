@@ -34,6 +34,8 @@ jobs:
             -configuration Release \
             -archivePath build/Hex.xcarchive \
             -destination "generic/platform=macOS" \
+            -allowProvisioningUpdates \
+            DEVELOPMENT_TEAM=7T8DYS43CJ \
             MARKETING_VERSION="${{ steps.version.outputs.version }}" \
             CURRENT_PROJECT_VERSION="${{ steps.version.outputs.build_number }}"
 
